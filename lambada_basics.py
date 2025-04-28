@@ -7,7 +7,8 @@ train_dataset = lambada["train"]
 print(f"Fields in each entry of the training dataset: {train_dataset[0].keys()}")
 word_counts = list()
 for example in train_dataset:
-    word_counts.append(len(example["text"].split()))
+    text_len = len(example["text"].split())
+    if text_len > 0: word_counts.append(text_len) 
 
 print(f"""LAMBADA training dataset stats:
   Average words per novel:      {statistics.mean(word_counts)}
