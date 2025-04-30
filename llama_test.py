@@ -1,6 +1,7 @@
 # Load model directly
 import torch
 import time
+from evaluate import load
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from datasets import load_dataset
 from torch.utils.data import DataLoader
@@ -19,10 +20,13 @@ tokenizer.pad_token = tokenizer.eos_token
 model = AutoModelForCausalLM.from_pretrained(model_name)
 
 def tokenize_fn(example):
-    encoding = tokenizer(example["text"], truncation=True, max_length=block_size)
+    # Split the text into words and remove the last word from each sentence
+    example['text'] = [" ".join(sentence.split()[:-1]) for sentence in example["text"]]
+    encoding = tokenizer(example['text'], truncation=True, max_length=block_size)
     return encoding
 
 lambada_tokenized = test_dataset.map(tokenize_fn, batched=True, remove_columns=["text"])
+
 print("Show all the contents of the tokenized dataset:")
 for t in lambada_tokenized:
     print(f"Input IDs: {t['input_ids']} Length: {len(t['input_ids'])}")
@@ -51,7 +55,8 @@ model.eval()
 
 start_time = time.time()
 for batch in loader:
-    input_ids = batch["input_ids"]
+    # Exclude the last token from input_ids for causal language modeling
+    input_ids = batch["input_ids"][:-1]
     labels = batch["labels"]
     lengths = batch["lengths"]
 
