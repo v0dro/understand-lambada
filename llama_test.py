@@ -21,15 +21,10 @@ model = AutoModelForCausalLM.from_pretrained(model_name)
 
 def tokenize_fn(example):
     # Split the text into words and remove the last word from each sentence
-    example['text'] = [" ".join(sentence.split()[:-1]) for sentence in example["text"]]
     encoding = tokenizer(example['text'], truncation=True, max_length=block_size)
     return encoding
 
 lambada_tokenized = test_dataset.map(tokenize_fn, batched=True, remove_columns=["text"])
-
-print("Show all the contents of the tokenized dataset:")
-for t in lambada_tokenized:
-    print(f"Input IDs: {t['input_ids']} Length: {len(t['input_ids'])}")
 
 # Collate function to pad sequences.
 def collate_fn(batch):
@@ -47,27 +42,26 @@ def collate_fn(batch):
 loader = DataLoader(lambada_tokenized, batch_size=1, 
                     shuffle=False, collate_fn=collate_fn)
 
-print("Show all the contents of the padded dataset:")
-for t in loader:
-    print(f"Keys: {t.keys()} Input IDs: {t['input_ids']} Length of input IDs: {len(t['input_ids'])}")
-
 model.eval()
 
 start_time = time.time()
 for batch in loader:
     # Exclude the last token from input_ids for causal language modeling
-    input_ids = batch["input_ids"][:-1]
+    input_ids = batch["input_ids"]
     labels = batch["labels"]
     lengths = batch["lengths"]
+    input_ids[:, -1] = tokenizer.pad_token_id
+
 
     with torch.no_grad():
         outputs = model(input_ids=input_ids, labels=labels)
         loss = outputs.loss
         logits = outputs.logits
         predictions = torch.argmax(logits, dim=-1)
-        print(f"Loss: {loss.item()}")
 
-    print(predictions)
+    print(f"Cross-entropy loss: {loss.item()}")
+    print("Model input string :", tokenizer.decode(input_ids[0], skip_special_tokens=True))
+    print("Model output string:", tokenizer.decode(predictions[0], skip_special_tokens=True))
 end_time = time.time()
 
 print(f"Time taken for inference: {end_time - start_time} seconds")
