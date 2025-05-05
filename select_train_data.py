@@ -58,9 +58,9 @@ for l in loader:
 
     for batch in range(batch_size):
         start_time = time.time()
-        input_ids = l['input_ids'][batch]
-        attention_mask = l['attention_mask'][batch]
-        labels = l['labels'][batch]
+        input_ids = l['input_ids'][batch].unsqueeze(0)
+        attention_mask = l['attention_mask'][batch].unsqueeze(0)
+        labels = l['labels'][batch].unsqueeze(0)
 
         outputs = model(input_ids=input_ids, labels=labels, attention_mask=attention_mask)
         loss = outputs.loss
