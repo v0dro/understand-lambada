@@ -21,22 +21,17 @@ for i, t in enumerate(train_dataset):
 select_train_indices = train_dataset.select(train_indices_with_logan)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
-
-print("Show all the contents of the test dataset:")
-tokenized_sentence_len = list()
-for i, t in enumerate(select_train_indices):
-    tokenized_sentence_len.append(tokenizer(t['text'], return_tensors="pt")['input_ids'].numel())
-
-print("Tokenized training dataset stats:")
-print(f"  Tot. train sets: {len(tokenized_sentence_len)}")
-print(f"  Avg. length: {statistics.mean(tokenized_sentence_len)}")
-print(f"  Max. length: {max(tokenized_sentence_len)}")
-print(f"  Min. length: {min(tokenized_sentence_len)}")
-
 model = AutoModelForCausalLM.from_pretrained(model_name)
 
 def tokenize_fn(example):
-    encoding = tokenizer(example['text'], truncation=True, max_length=block_size, padding="max_length")
+    encoding = tokenizer(
+        example['text'],
+        truncation=True, 
+        max_length=block_size, 
+        padding="max_length",
+        return_overflowing_tokens=True,
+        return_length=True,
+    )
     return encoding
 
 lambada_tokenized = select_train_indices.map(tokenize_fn, batched=True, remove_columns=["text"])
@@ -62,8 +57,6 @@ for batch in loader:
     start_time = time.time()
     input_ids = batch["input_ids"]
     labels = batch["labels"]
-    # Exclude the last token from input_ids for causal language modeling
-    input_ids[:, -1] = tokenizer.pad_token_id
 
     outputs = model(input_ids=input_ids, labels=labels)
     loss = outputs.loss
