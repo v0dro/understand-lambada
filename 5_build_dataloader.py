@@ -66,4 +66,4 @@ for l in loader:
     avg_labels_len /= num_sequences
     avg_attention_mask_len /= num_sequences
 
-    print("Number of sequences:", num_sequences, "Avg. input_ids length:", avg_input_ids_len, "Avg. labels len: ", avg_labels_len, "Avg. attention_mask len:", avg_attention_mask_len)
+    print("chunks:", num_sequences, "input_ids_len:", avg_input_ids_len, "labels_len: ", avg_labels_len, "attention_mask_len:", avg_attention_mask_len)
