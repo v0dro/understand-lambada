@@ -8,7 +8,6 @@ from torch.utils.data import DataLoader
 model_name = "meta-llama/Llama-3.2-1B"
 block_size = 8192
 batch_size = 1
-load_checkpoint = True
 
 test_dataset = load_dataset("lambada", split="test[360:361]")
 
@@ -22,27 +21,26 @@ model = AutoModelForCausalLM.from_pretrained(model_name)
 
 def tokenize_fn(example):
     # Split the text into words and remove the last word from each sentence
+    split_text = example['text'].split()
+    text = " ".join(split_text[:-1])
     encoding = tokenizer(
-        example['text'], 
+        text, 
         truncation=True, 
         max_length=block_size
     )
+    # Preserve the original text to check the accuracy later.
+    encoding['original_text'] =  " ".join(split_text)
     
     return encoding
 
-lambada_tokenized = test_dataset.map(tokenize_fn, batched=True, remove_columns=["text"])
+lambada_tokenized = test_dataset.map(tokenize_fn, remove_columns=["text"])
 
-# Collate function to pad sequences.
 def collate_fn(batch):
-    input_ids = [example["input_ids"] for example in batch]
-    lengths = [len(example["input_ids"]) for example in batch]
-
-    # The padding function will make all the sub-lists in the input_ids list of the same
-    # length with padding. Unlike the fine tuning example from 7_finetune_lambada.py, this
-    # is necessary because the tokenizer has not applied any padding to the input_ids.
-    padded = tokenizer.pad({"input_ids": input_ids}, return_tensors="pt")
-    padded["labels"] = padded["input_ids"].clone()
-    padded["lengths"] = torch.tensor(lengths)
+    padded = dict()
+    padded['original_text'] = batch[0]['original_text']
+    padded['input_ids'] = torch.tensor(batch[0]['input_ids'])
+    padded['labels'] = padded['input_ids'].clone()
+    padded['attention_mask'] = torch.tensor(batch[0]['attention_mask'])
 
     return padded
 
@@ -50,22 +48,21 @@ loader = DataLoader(lambada_tokenized, batch_size=batch_size,
                     shuffle=False, collate_fn=collate_fn)
 
 model.eval()
-# Add .generate() code here.
 
 start_time = time.time()
 for batch in loader:
-    input_ids = batch["input_ids"]
-    labels = batch["labels"]
-    lengths = batch["lengths"]
-
-    # Remove the last token from the input_ids so the model can predict the next token.
-    input_ids[:, -1] = tokenizer.eos_token_id
-    print(input_ids)
-    print(labels)
+    original_text = batch['original_text']
+    input_ids = batch["input_ids"].unsqueeze(0)
+    labels = batch["labels"].unsqueeze(0)
+    attention_mask = batch['attention_mask'].unsqueeze(0)
 
     with torch.no_grad():
-        outputs = model.generate(input_ids=input_ids, max_new_tokens=1)
+        outputs = model.generate(
+            input_ids=input_ids, 
+            max_new_tokens=1,
+            attention_mask=attention_mask)
 
+    print(f"Original text last word: {original_text.split()[-1]}")
     print("Last predicted token:", tokenizer.decode(outputs[0], skip_special_tokens=True))
 end_time = time.time()
 
