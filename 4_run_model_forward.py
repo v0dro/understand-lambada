@@ -51,7 +51,10 @@ for batch in loader:
     attention_mask = batch["attention_mask"].unsqueeze(0)
 
     with torch.no_grad():
-        outputs = model(input_ids=input_ids, labels=labels, attention_mask=attention_mask)
+        outputs = model(
+            input_ids=input_ids,
+            labels=labels,
+            attention_mask=attention_mask)
         loss = outputs.loss
 
     print(f"Cross-entropy loss: {loss.item()}.")
