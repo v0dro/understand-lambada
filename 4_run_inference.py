@@ -1,7 +1,6 @@
 # Load model directly
 import torch
 import time
-from evaluate import load
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from datasets import load_dataset
 from torch.utils.data import DataLoader
@@ -9,7 +8,6 @@ from torch.utils.data import DataLoader
 model_name = "meta-llama/Llama-3.2-1B"
 block_size = 8192
 load_checkpoint = True
-checkpoint_file = "llama_logan_finetuned.pth"
 
 test_dataset = load_dataset("lambada", split="test[360:361]")
 
@@ -20,9 +18,6 @@ for t in test_dataset:
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
 model = AutoModelForCausalLM.from_pretrained(model_name)
-
-if load_checkpoint:
-    model.load_state_dict(torch.load(checkpoint_file, map_location="cpu"))
 
 def tokenize_fn(example):
     # Split the text into words and remove the last word from each sentence
