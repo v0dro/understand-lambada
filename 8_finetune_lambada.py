@@ -76,4 +76,4 @@ for l in loader:
 
         print(f"Cross-entropy loss: {loss.item()} Time: {end_time - start_time}s")
 
-    print("total time: ", total_time, "perplexity: ", math.exp(total_loss / num_chunks))
+    print("total time (h): ", total_time / 60 / 60, "perplexity: ", math.exp(total_loss / num_chunks))

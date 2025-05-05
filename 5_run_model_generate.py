@@ -50,26 +50,4 @@ loader = DataLoader(lambada_tokenized, batch_size=batch_size,
                     shuffle=False, collate_fn=collate_fn)
 
 model.eval()
-
-start_time = time.time()
-for batch in loader:
-    input_ids = batch["input_ids"]
-    labels = batch["labels"]
-    lengths = batch["lengths"]
-
-    # Remove the last token from the input_ids so the model can predict the next token.
-    input_ids[:, -1] = tokenizer.eos_token_id
-    print(input_ids)
-    print(labels)
-
-    with torch.no_grad():
-        outputs = model(input_ids=input_ids, labels=labels)
-        loss = outputs.loss
-        logits = outputs.logits
-        predictions = torch.argmax(logits, dim=-1)
-
-    print(f"Cross-entropy loss: {loss.item()} {predictions}")
-    print("Last predicted token:", tokenizer.decode(predictions[0][-1], skip_special_tokens=True))
-end_time = time.time()
-
-print(f"Time taken for inference: {end_time - start_time} seconds")
+# Add .generate() code here.
