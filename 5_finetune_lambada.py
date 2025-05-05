@@ -14,7 +14,7 @@ for i, t in enumerate(train_dataset):
     if "logan" in t['text']:
         train_indices_with_logan.append(i)
 
-train_indices_with_logan = train_indices_with_logan[:2]
+train_indices_with_logan = train_indices_with_logan[:1]
 
 # Select a subset of indices that contains the word "logan"
 select_train_indices = train_dataset.select(train_indices_with_logan)
@@ -36,12 +36,13 @@ def tokenize_fn(example):
 
     return encoding
 
+print("Tokenizing the dataset...")
 lambada_tokenized = select_train_indices.map(tokenize_fn, remove_columns=["text"])
 
 def collate_fn(batch):
     padded = dict()
     padded['input_ids'] = torch.tensor(batch[0]['input_ids'])
-    padded["labels"] = padded['input_ids'].clone()
+    padded['labels'] = padded['input_ids'].clone()
     padded['attention_mask'] = torch.tensor(batch[0]['attention_mask'])
 
     return padded
@@ -51,9 +52,8 @@ loader = DataLoader(lambada_tokenized, batch_size=1,
 
 # The tokens are split into block_size chunks. At this point, the loader will have
 # tensors of shape (split_tokens, block_size). Each sample will have variable block_size.
-
+total_time = 0.0
 for l in loader:
-    print("Loader output:", l['input_ids'].shape[0])
     batch_size = l['input_ids'].shape[0]
 
     for batch in range(batch_size):

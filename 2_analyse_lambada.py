@@ -17,13 +17,6 @@ print(f"""LAMBADA training dataset stats:
   Maximum words per novel:      {max(word_counts)}
 """)
 
-# Fields in each entry of the training dataset: dict_keys(['text', 'domain'])
-# LAMBADA training dataset stats:
-#   Average words per novel:      76339.94513340849
-#   Std. dev. of words per novel: 44594.20095395589
-#   Minimum words per novel:      32
-#   Maximum words per novel:      429820
-
 test_dataset = lambada["test"]
 # Display some stats about the training dataset
 print(f"Fields in each entry of the training dataset: {test_dataset[0].keys()}")
