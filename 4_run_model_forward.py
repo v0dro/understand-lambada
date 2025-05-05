@@ -21,7 +21,12 @@ model = AutoModelForCausalLM.from_pretrained(model_name)
 
 def tokenize_fn(example):
     # Split the text into words and remove the last word from each sentence
-    encoding = tokenizer(example['text'], truncation=True, max_length=block_size)
+    encoding = tokenizer(
+        example['text'], 
+        truncation=True, 
+        max_length=block_size
+    )
+    
     return encoding
 
 lambada_tokenized = test_dataset.map(tokenize_fn, batched=True, remove_columns=["text"])
@@ -49,9 +54,6 @@ for batch in loader:
     input_ids = batch["input_ids"]
     labels = batch["labels"]
     lengths = batch["lengths"]
-    # Exclude the last token from input_ids for causal language modeling
-    input_ids[:, -1] = tokenizer.pad_token_id
-
 
     with torch.no_grad():
         outputs = model(input_ids=input_ids, labels=labels)
