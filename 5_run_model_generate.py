@@ -51,3 +51,22 @@ loader = DataLoader(lambada_tokenized, batch_size=batch_size,
 
 model.eval()
 # Add .generate() code here.
+
+start_time = time.time()
+for batch in loader:
+    input_ids = batch["input_ids"]
+    labels = batch["labels"]
+    lengths = batch["lengths"]
+
+    # Remove the last token from the input_ids so the model can predict the next token.
+    input_ids[:, -1] = tokenizer.eos_token_id
+    print(input_ids)
+    print(labels)
+
+    with torch.no_grad():
+        outputs = model.generate(input_ids=input_ids, max_new_tokens=1)
+
+    print("Last predicted token:", tokenizer.decode(outputs[0], skip_special_tokens=True))
+end_time = time.time()
+
+print(f"Time taken for inference: {end_time - start_time} seconds")
