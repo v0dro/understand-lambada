@@ -1,5 +1,6 @@
 import time
 import torch
+import math
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from torch.utils.data import DataLoader
@@ -23,7 +24,6 @@ tokenizer.pad_token = tokenizer.eos_token
 model = AutoModelForCausalLM.from_pretrained(model_name)
 
 def tokenize_fn(example):
-    print("Tokenizing example:", len(example['text']))
     encoding = tokenizer(
         example['text'],
         truncation=True, 
@@ -36,7 +36,6 @@ def tokenize_fn(example):
 
     return encoding
 
-print("Tokenizing the dataset...")
 lambada_tokenized = select_train_indices.map(tokenize_fn, remove_columns=["text"])
 
 def collate_fn(batch):
@@ -52,15 +51,19 @@ loader = DataLoader(lambada_tokenized, batch_size=1,
 
 # The tokens are split into block_size chunks. At this point, the loader will have
 # tensors of shape (split_tokens, block_size). Each sample will have variable block_size.
+
+print("Begin fine tuning...")
+total_loss = 0.0
 total_time = 0.0
 for l in loader:
-    batch_size = l['input_ids'].shape[0]
+    num_chunks = l['input_ids'].shape[0]
 
-    for batch in range(batch_size):
+    for batch in range(num_chunks):
         start_time = time.time()
         input_ids = l['input_ids'][batch].unsqueeze(0)
         attention_mask = l['attention_mask'][batch].unsqueeze(0)
         labels = l['labels'][batch].unsqueeze(0)
+        labels[torch.logical_not(attention_mask)] = -100  # Ignore padding tokens in the loss
 
         outputs = model(input_ids=input_ids, labels=labels, attention_mask=attention_mask)
         loss = outputs.loss
@@ -69,6 +72,8 @@ for l in loader:
         end_time = time.time()
         total_time += end_time - start_time
 
+        total_loss += loss.item()
+
         print(f"Cross-entropy loss: {loss.item()} Time: {end_time - start_time}s")
 
-print("total time: ", total_time)
+    print("total time: ", total_time, "perplexity: ", math.exp(total_loss / num_chunks))
