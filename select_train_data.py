@@ -62,8 +62,7 @@ for l in loader:
         attention_mask = l['attention_mask'][batch]
         labels = l['labels'][batch]
 
-
-        outputs = model(input_ids=input_ids, labels=labels)
+        outputs = model(input_ids=input_ids, labels=labels, attention_mask=attention_mask)
         loss = outputs.loss
         logits = outputs.logits
         loss.backward()
