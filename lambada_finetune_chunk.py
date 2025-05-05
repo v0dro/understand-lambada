@@ -5,7 +5,7 @@ import statistics
 from evaluate import load
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from datasets import load_dataset
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 
 model_name = "meta-llama/Llama-3.2-1B"
 block_size = 8192
@@ -17,6 +17,8 @@ for i, t in enumerate(train_dataset):
     if "logan" in t['text']:
         train_indices_with_logan.append(i)
 
+train_indices_with_logan = train_indices_with_logan[:50]
+
 # Select a subset of indices that contains the word "logan"
 select_train_indices = train_dataset.select(train_indices_with_logan)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -27,14 +29,14 @@ def tokenize_fn(example):
     encoding = tokenizer(
         example['text'],
         truncation=True, 
-        max_length=block_size, 
+        max_length=block_size,
         padding="max_length",
         return_overflowing_tokens=True,
         return_length=True,
     )
     return encoding
 
-lambada_tokenized = select_train_indices.map(tokenize_fn, batched=True, remove_columns=["text"])
+lambada_tokenized = select_train_indices.map(tokenize_fn, remove_columns=["text"])
 
 # Collate function to pad sequences.
 def collate_fn(batch):
@@ -50,6 +52,7 @@ def collate_fn(batch):
 loader = DataLoader(lambada_tokenized, batch_size=1, 
                     shuffle=False, collate_fn=collate_fn)
 
+# This will result in returning tensors that have the shape (batch_size, sequences, block_size).
 model.train()
 
 total_time = 0.0
