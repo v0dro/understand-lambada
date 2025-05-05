@@ -53,8 +53,6 @@ for batch in loader:
     with torch.no_grad():
         outputs = model(input_ids=input_ids, labels=labels, attention_mask=attention_mask)
         loss = outputs.loss
-        logits = outputs.logits
-        predictions = torch.argmax(logits, dim=-1)
 
     print(f"Cross-entropy loss: {loss.item()}.")
 end_time = time.time()

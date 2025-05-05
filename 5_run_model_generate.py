@@ -11,10 +11,6 @@ batch_size = 1
 
 test_dataset = load_dataset("lambada", split="test[360:361]")
 
-print("Show all the contents of the test dataset:")
-for t in test_dataset:
-    print(f"Text: {t['text']} Length: {len(t['text'])}")
-
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
 model = AutoModelForCausalLM.from_pretrained(model_name)
@@ -63,7 +59,7 @@ for batch in loader:
             attention_mask=attention_mask)
 
     print(f"Original text last word: {original_text.split()[-1]}")
-    print("Last predicted token:", tokenizer.decode(outputs[0], skip_special_tokens=True))
+    print("Last predicted token:", tokenizer.decode(outputs[0][-1], skip_special_tokens=True))
 end_time = time.time()
 
-print(f"Time taken for inference: {end_time - start_time} seconds")
+print(f"Time taken for generation: {end_time - start_time} seconds")
