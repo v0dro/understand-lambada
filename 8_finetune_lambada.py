@@ -7,6 +7,8 @@ from torch.utils.data import DataLoader
 
 model_name = "meta-llama/Llama-3.2-1B"
 block_size = 8192
+learning_rate = 2e-5
+min_lr = 2e-6
 
 train_dataset = load_dataset("lambada", split="train")
 train_indices_with_logan = list()
@@ -48,6 +50,11 @@ def collate_fn(batch):
 
 loader = DataLoader(lambada_tokenized, batch_size=1, 
                     shuffle=False, collate_fn=collate_fn)
+max_iter = len(loader)
+optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max_iter, 
+                                                       eta_min=min_lr)
+
 
 # The tokens are split into block_size chunks. At this point, the loader will have
 # tensors of shape (split_tokens, block_size). Each sample will have variable block_size.
@@ -69,6 +76,9 @@ for l in loader:
         loss = outputs.loss
         logits = outputs.logits
         loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+        scheduler.step()
         end_time = time.time()
         total_time += end_time - start_time
 
